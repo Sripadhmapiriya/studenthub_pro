@@ -6,19 +6,15 @@ import PersonalInfoSection from './components/PersonalInfoSection';
 import AcademicInfoSection from './components/AcademicInfoSection';
 import LocationInfoSection from './components/LocationInfoSection';
 import FormActions from './components/FormActions';
+import { studentsAPI } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 const AddStudent = () => {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-
-  // Mock user data
-  const user = {
-    name: "Dr. Sarah Johnson",
-    email: "sarah.johnson@studenthub.edu",
-    role: "Administrator"
-  };
 
   // Form data state
   const [formData, setFormData] = useState({
@@ -54,8 +50,7 @@ const AddStudent = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
+    logout();
     navigate('/login');
   };
 
@@ -146,27 +141,23 @@ const AddStudent = () => {
     setIsLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Generate student ID if not provided
-      const finalFormData = {
-        ...formData,
-        id: formData?.studentId || generateStudentId(),
-        studentId: formData?.studentId || generateStudentId(),
-        createdAt: new Date()?.toISOString(),
-        status: 'active',
-        enrollmentDate: new Date()?.toISOString(),
-        location: `${formData?.city}, ${formData?.state?.toUpperCase()}`
+      // Prepare data for backend API
+      const studentData = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        course: formData.course,
+        year: formData.year,
+        studentId: formData.studentId || undefined, // Let backend generate if empty
+        addressLine1: formData.address,
+        city: formData.city,
+        state: formData.state,
+        country: formData.country,
+        postalCode: formData.zipCode
       };
 
-      // Save to localStorage so it appears in student list
-      const existingStudents = JSON.parse(localStorage.getItem('students') || '[]');
-      const updatedStudents = [...existingStudents, finalFormData];
-      localStorage.setItem('students', JSON.stringify(updatedStudents));
-
-      // Mock successful creation
-      console.log('Student created and saved:', finalFormData);
+      // Call backend API
+      const createdStudent = await studentsAPI.create(studentData);
 
       // Show success message
       setShowSuccessMessage(true);
@@ -175,7 +166,7 @@ const AddStudent = () => {
       setTimeout(() => {
         navigate('/student-list', {
           state: {
-            message: `Student "${finalFormData?.name}" has been successfully created!`,
+            message: `Student "${createdStudent.name}" has been successfully created!`,
             type: 'success'
           }
         });
@@ -184,7 +175,7 @@ const AddStudent = () => {
     } catch (error) {
       console.error('Error creating student:', error);
       setErrors({
-        submit: 'Failed to create student. Please try again.'
+        submit: error.message || 'Failed to create student. Please try again.'
       });
     } finally {
       setIsLoading(false);

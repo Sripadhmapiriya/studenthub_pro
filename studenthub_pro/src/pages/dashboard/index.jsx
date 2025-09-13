@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import Header from '../../components/ui/Header';
 import Breadcrumbs from '../../components/ui/Breadcrumbs';
 import LoadingGuard from '../../components/ui/LoadingGuard';
@@ -14,13 +15,16 @@ import Button from '../../components/ui/Button';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { user: authUser, logout, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [user] = useState({
-    name: "Dr. Sarah Johnson",
-    email: "sarah.johnson@studenthub.edu",
-    role: "Administrator"
-  });
+  
+  // Use actual authenticated user data
+  const user = authUser ? {
+    name: authUser.username || authUser.email || "User",
+    email: authUser.email || "",
+    role: authUser.role || "User"
+  } : null;
 
   // Mock data for dashboard metrics
   const metrics = [
@@ -211,8 +215,7 @@ const Dashboard = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
+    logout();
     navigate('/login');
   };
 

@@ -4,32 +4,25 @@ import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import { Checkbox } from '../../../components/ui/Checkbox';
 import Icon from '../../../components/AppIcon';
+import { useAuth } from '../../../contexts/AuthContext';
 
-const LoginForm = ({ onLogin, isLoading }) => {
+const LoginForm = () => {
   const navigate = useNavigate();
+  const { login, isLoading } = useAuth();
   const [formData, setFormData] = useState({
-    email: '',
+    usernameOrEmail: '',
     password: '',
     rememberMe: false
   });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
 
-  // Mock credentials for different user types
-  const mockCredentials = [
-    { email: "admin@studenthub.edu", password: "admin123", role: "Administrator" },
-    { email: "staff@studenthub.edu", password: "staff123", role: "Academic Staff" },
-    { email: "registrar@studenthub.edu", password: "reg123", role: "Registrar" }
-  ];
-
   const validateForm = () => {
     const newErrors = {};
 
-    // Email validation
-    if (!formData?.email) {
-      newErrors.email = "Email address is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/?.test(formData?.email)) {
-      newErrors.email = "Please enter a valid email address";
+    // Username/Email validation
+    if (!formData?.usernameOrEmail) {
+      newErrors.usernameOrEmail = "Username or email is required";
     }
 
     // Password validation
@@ -65,32 +58,30 @@ const LoginForm = ({ onLogin, isLoading }) => {
       return;
     }
 
-    // Check against mock credentials
-    const validCredential = mockCredentials?.find(
-      cred => cred?.email === formData?.email && cred?.password === formData?.password
-    );
-
-    if (!validCredential) {
-      setErrors({
-        general: `Invalid credentials. Try: ${mockCredentials?.[0]?.email} / ${mockCredentials?.[0]?.password}`
+    try {
+      const result = await login({
+        usernameOrEmail: formData.usernameOrEmail,
+        password: formData.password
       });
-      return;
+
+      if (result.success) {
+        // Navigate to dashboard
+        navigate('/dashboard');
+      } else {
+        setErrors({
+          general: result.error || 'Login failed. Please check your credentials.'
+        });
+      }
+    } catch (error) {
+      setErrors({
+        general: 'Login failed. Please try again.'
+      });
     }
-
-    // Simulate login process
-    await onLogin({
-      email: formData?.email,
-      rememberMe: formData?.rememberMe,
-      role: validCredential?.role
-    });
-
-    // Navigate to dashboard
-    navigate('/dashboard');
   };
 
   const handleForgotPassword = () => {
     // In a real app, this would open a password reset modal or navigate to reset page
-    alert("Password reset functionality would be implemented here. For demo, use the provided credentials.");
+    alert("Password reset functionality would be implemented here. Default credentials: admin / admin123");
   };
 
   return (
@@ -106,14 +97,14 @@ const LoginForm = ({ onLogin, isLoading }) => {
           </div>
         )}
 
-        {/* Email Field */}
+        {/* Username/Email Field */}
         <Input
-          label="Email Address"
-          type="email"
-          placeholder="Enter your email address"
-          value={formData?.email}
-          onChange={(e) => handleInputChange('email', e?.target?.value)}
-          error={errors?.email}
+          label="Username or Email"
+          type="text"
+          placeholder="Enter your username or email"
+          value={formData?.usernameOrEmail}
+          onChange={(e) => handleInputChange('usernameOrEmail', e?.target?.value)}
+          error={errors?.usernameOrEmail}
           required
           disabled={isLoading}
           className="transition-micro"

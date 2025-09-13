@@ -1,61 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import WelcomeHeader from './components/WelcomeHeader';
 import LoginForm from './components/LoginForm';
 import SecurityBadges from './components/SecurityBadges';
 import CredentialsHelper from './components/CredentialsHelper';
+import { useAuth } from '../../contexts/AuthContext';
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isAuthenticated, isLoading } = useAuth();
 
   // Check if user is already authenticated
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      setIsAuthenticated(true);
+    if (isAuthenticated) {
       navigate('/dashboard', { replace: true });
     }
-  }, [navigate]);
-
-  // Handle login process
-  const handleLogin = async (credentials) => {
-    setIsLoading(true);
-    
-    try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Generate mock JWT token
-      const mockToken = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.${btoa(JSON.stringify({
-        email: credentials?.email,
-        role: credentials?.role,
-        exp: Date.now() + (credentials?.rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000) // 30 days or 1 day
-      }))}.signature`;
-
-      // Store authentication data
-      localStorage.setItem('authToken', mockToken);
-      localStorage.setItem('userEmail', credentials?.email);
-      localStorage.setItem('userRole', credentials?.role);
-      
-      if (credentials?.rememberMe) {
-        localStorage.setItem('rememberMe', 'true');
-      }
-
-      setIsAuthenticated(true);
-      
-      // Navigate to intended page or dashboard
-      const from = location?.state?.from?.pathname || '/dashboard';
-      navigate(from, { replace: true });
-      
-    } catch (error) {
-      console.error('Login error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [isAuthenticated, navigate]);
 
   // Don't render if already authenticated
   if (isAuthenticated) {
@@ -74,7 +35,7 @@ const LoginPage = () => {
           <WelcomeHeader />
           
           {/* Login Form */}
-          <LoginForm onLogin={handleLogin} isLoading={isLoading} />
+          <LoginForm />
           
           {/* Demo Credentials Helper */}
           <CredentialsHelper />

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import Header from '../../components/ui/Header';
 import Breadcrumbs from '../../components/ui/Breadcrumbs';
 import LoadingGuard, { ContentSkeleton } from '../../components/ui/LoadingGuard';
@@ -10,6 +11,7 @@ import EnrollmentHistoryCard from './components/EnrollmentHistoryCard';
 import ActivityTimelineCard from './components/ActivityTimelineCard';
 
 const StudentProfile = () => {
+  const { logout } = useAuth();
   const [student, setStudent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(true);
@@ -141,9 +143,7 @@ const StudentProfile = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
-    setIsAuthenticated(false);
+    logout();
     navigate('/login');
   };
 

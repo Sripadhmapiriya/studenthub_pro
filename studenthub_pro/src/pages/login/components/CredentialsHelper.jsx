@@ -8,21 +8,9 @@ const CredentialsHelper = () => {
   const demoCredentials = [
     {
       role: "Administrator",
-      email: "admin@studenthub.edu",
+      email: "admin",
       password: "admin123",
       description: "Full system access with all permissions"
-    },
-    {
-      role: "Academic Staff",
-      email: "staff@studenthub.edu",
-      password: "staff123",
-      description: "Course management and student records"
-    },
-    {
-      role: "Registrar",
-      email: "registrar@studenthub.edu",
-      password: "reg123",
-      description: "Enrollment and academic records"
     }
   ];
 

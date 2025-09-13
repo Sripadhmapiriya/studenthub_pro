@@ -6,21 +6,21 @@ import FilterToolbar from './components/FilterToolbar';
 import StudentTable from './components/StudentTable';
 import PaginationControls from './components/PaginationControls';
 import BulkActionModal from './components/BulkActionModal';
+import { studentsAPI } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 const StudentList = () => {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   
-  // Mock user data
-  const mockUser = {
-    name: "Dr. Sarah Johnson",
-    email: "sarah.johnson@studenthub.edu"
-  };
-
   // State management
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('darkMode') === 'true';
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [students, setStudents] = useState([]);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalStudents, setTotalStudents] = useState(0);
   const [searchValue, setSearchValue] = useState('');
   const [filterValue, setFilterValue] = useState('all');
   const [courseFilter, setCourseFilter] = useState('all');
@@ -30,7 +30,6 @@ const StudentList = () => {
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'asc' });
   const [bulkActionModal, setBulkActionModal] = useState({ isOpen: false, type: null });
-  const [students, setStudents] = useState([]);
 
   // Mock student data with Indian locations
   const initialStudents = [
@@ -202,12 +201,49 @@ const StudentList = () => {
   ];
 
   // Initialize students state
+  // Load students from backend with search and filters
+  const loadStudents = async () => {
+    try {
+      setIsLoading(true);
+      let response;
+      
+      if (searchValue) {
+        // Use search API
+        response = await studentsAPI.search(searchValue, currentPage - 1, itemsPerPage);
+      } else if (courseFilter !== 'all' || yearFilter !== 'all' || filterValue !== 'all') {
+        // Use filter API
+        const filters = {};
+        if (courseFilter !== 'all') filters.course = courseFilter;
+        if (yearFilter !== 'all') filters.year = yearFilter;
+        if (filterValue !== 'all') filters.status = filterValue.toUpperCase();
+        
+        response = await studentsAPI.filter(filters, currentPage - 1, itemsPerPage);
+      } else {
+        // Use regular getAll API
+        response = await studentsAPI.getAll(
+          currentPage - 1,
+          itemsPerPage,
+          'createdAt',
+          'desc'
+        );
+      }
+      
+      if (response) {
+        setStudents(response.content || []);
+        setTotalPages(response.totalPages || 0);
+        setTotalStudents(response.totalElements || 0);
+      }
+    } catch (error) {
+      console.error('Failed to load students:', error);
+      setStudents([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    // Load students from localStorage and merge with initial data
-    const savedStudents = JSON.parse(localStorage.getItem('students') || '[]');
-    const allStudents = [...initialStudents, ...savedStudents];
-    setStudents(allStudents);
-  }, []);
+    loadStudents();
+  }, [currentPage, itemsPerPage, searchValue, courseFilter, yearFilter, filterValue]);
 
   // Initialize loading state
   useEffect(() => {
@@ -227,49 +263,13 @@ const StudentList = () => {
     localStorage.setItem('darkMode', isDarkMode?.toString());
   }, [isDarkMode]);
 
-  // Filter and sort students
-  const filteredAndSortedStudents = useMemo(() => {
-    let filtered = students?.filter(student => {
-      const matchesSearch = !searchValue || 
-        student?.name?.toLowerCase()?.includes(searchValue?.toLowerCase()) ||
-        student?.email?.toLowerCase()?.includes(searchValue?.toLowerCase()) ||
-        student?.id?.toLowerCase()?.includes(searchValue?.toLowerCase());
-      
-      const matchesStatus = filterValue === 'all' || student?.status === filterValue;
-      const matchesCourse = courseFilter === 'all' || student?.course === courseFilter;
-      const matchesYear = yearFilter === 'all' || student?.year === yearFilter;
-      
-      return matchesSearch && matchesStatus && matchesCourse && matchesYear;
-    });
-
-    // Sort students
-    filtered?.sort((a, b) => {
-      const aValue = a?.[sortConfig?.key];
-      const bValue = b?.[sortConfig?.key];
-      
-      if (sortConfig?.direction === 'asc') {
-        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-      } else {
-        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-      }
-    });
-
-    return filtered;
-  }, [students, searchValue, filterValue, courseFilter, yearFilter, sortConfig]);
-
-  // Paginated students
-  const paginatedStudents = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredAndSortedStudents?.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredAndSortedStudents, currentPage, itemsPerPage]);
-
   // Event handlers
   const handleToggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('authToken');
+    logout();
     navigate('/login');
   };
 
@@ -312,27 +312,23 @@ const StudentList = () => {
     navigate('/edit-student', { state: { student } });
   };
 
-  const handleDeleteStudent = (studentId) => {
+  const handleDeleteStudent = async (studentId) => {
     if (window.confirm('Are you sure you want to delete this student?')) {
-      console.log('Deleting student:', studentId);
-      
-      // Remove from selected students
-      setSelectedStudents(prev => prev?.filter(id => id !== studentId));
-      
-      // Remove from the main student list
-      setStudents(prev => {
-        const updatedStudents = prev.filter(student => student.id !== studentId);
+      try {
+        await studentsAPI.delete(studentId);
         
-        // Update localStorage - only save the added students (not initial mock data)
-        const savedStudents = JSON.parse(localStorage.getItem('students') || '[]');
-        const updatedSavedStudents = savedStudents.filter(student => student.id !== studentId);
-        localStorage.setItem('students', JSON.stringify(updatedSavedStudents));
+        // Remove from selected students
+        setSelectedStudents(prev => prev?.filter(id => id !== studentId));
         
-        return updatedStudents;
-      });
-      
-      // Show success message
-      alert('Student deleted successfully');
+        // Reload the students list
+        loadStudents();
+        
+        // Show success message
+        alert('Student deleted successfully');
+      } catch (error) {
+        console.error('Failed to delete student:', error);
+        alert('Failed to delete student. Please try again.');
+      }
     }
   };
 
@@ -360,18 +356,16 @@ const StudentList = () => {
   const handleExportData = (format, selectedIds) => {
     const dataToExport = selectedIds?.length > 0 
       ? students?.filter(student => selectedIds?.includes(student?.id))
-      : filteredAndSortedStudents;
+      : students;
     
     console.log(`Exporting ${dataToExport?.length} students as ${format}`);
     // In real app, this would generate and download the file
   };
 
-  const totalPages = Math.ceil(filteredAndSortedStudents?.length / itemsPerPage);
-
   return (
     <div className="min-h-screen bg-background">
       <Header
-        user={mockUser}
+        user={user}
         onLogout={handleLogout}
         isDarkMode={isDarkMode}
         onToggleDarkMode={handleToggleDarkMode}
@@ -393,13 +387,13 @@ const StudentList = () => {
             onBulkDelete={handleBulkDelete}
             onBulkEdit={handleBulkEdit}
             onExportData={handleExportData}
-            totalStudents={students?.length}
-            filteredCount={filteredAndSortedStudents?.length}
+            totalStudents={totalStudents}
+            filteredCount={totalStudents}
             isLoading={isLoading}
           />
 
           <StudentTable
-            students={paginatedStudents}
+            students={students}
             selectedStudents={selectedStudents}
             onSelectStudent={handleSelectStudent}
             onSelectAll={handleSelectAll}
@@ -411,12 +405,12 @@ const StudentList = () => {
             isLoading={isLoading}
           />
 
-          {!isLoading && filteredAndSortedStudents?.length > 0 && (
+          {!isLoading && students?.length > 0 && (
             <div className="mt-6">
               <PaginationControls
                 currentPage={currentPage}
                 totalPages={totalPages}
-                totalItems={filteredAndSortedStudents?.length}
+                totalItems={totalStudents}
                 itemsPerPage={itemsPerPage}
                 onPageChange={handlePageChange}
                 onItemsPerPageChange={handleItemsPerPageChange}

@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import Header from '../../components/ui/Header';
 import Breadcrumbs from '../../components/ui/Breadcrumbs';
 import EditStudentHeader from './components/EditStudentHeader';
@@ -7,22 +8,23 @@ import EditStudentForm from './components/EditStudentForm';
 
 const EditStudent = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout, user } = useAuth();
 
   useEffect(() => {
     document.title = 'Edit Student - StudentHub Pro';
   }, []);
 
-  // Mock user data for header
-  const mockUser = {
+  // Use actual user data from AuthContext
+  const mockUser = user || {
     name: "Administrator",
     email: "admin@studenthub.edu",
     avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
   };
 
   const handleLogout = () => {
-    // Mock logout functionality
-    console.log('Logging out...');
-    // In real app: clear tokens, redirect to login
+    logout();
+    navigate('/login');
   };
 
   const handleToggleDarkMode = () => {
