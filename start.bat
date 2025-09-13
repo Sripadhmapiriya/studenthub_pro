@@ -18,7 +18,7 @@ start "StudentHub Frontend" cmd /c "npm start"
 echo.
 echo Both applications are starting...
 echo Backend will be available at: http://localhost:8080/api
-echo Frontend will be available at: http://localhost:3000
+echo Frontend will be available at: http://localhost:4028
 echo.
 echo Default Login Credentials:
 echo Username: admin
