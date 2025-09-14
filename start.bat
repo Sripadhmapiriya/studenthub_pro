@@ -5,7 +5,7 @@ echo.
 REM Start backend first
 echo [1/2] Starting Spring Boot Backend...
 cd "%~dp0backend"
-start "StudentHub Backend" cmd /c "mvn spring-boot:run"
+start "StudentHub Backend" cmd /c "java -jar target/backend-0.0.1-SNAPSHOT.jar"
 
 REM Wait a moment for backend to start initializing
 timeout /t 5 /nobreak > nul

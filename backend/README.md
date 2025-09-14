@@ -2,72 +2,44 @@
 
 A Spring Boot REST API backend for the StudentHub Pro application with PostgreSQL database integration.
 
-## Features
+## 🚀 Quick Start
 
-- **Student Management**: Complete CRUD operations for student records
-- **Authentication**: JWT-based authentication system
-- **Database Integration**: PostgreSQL database with JPA/Hibernate
-- **RESTful APIs**: Well-structured REST endpoints
-- **Security**: Spring Security with role-based access control
-- **CORS Support**: Configured for frontend communication
-- **Data Validation**: Request validation with detailed error handling
+### **Recommended: Use Start Script**
 
-## Technology Stack
+```bash
+cd studenthub_pro
+./start.bat
+```
+
+This starts both backend (port 8080) and frontend (port 4028) with default credentials:
+- **Username**: `admin`
+- **Password**: `admin123`
+
+### **Manual Backend Only**
+
+```bash
+cd backend
+.\apache-maven-3.9.4\bin\mvn.cmd clean package -DskipTests
+java -jar target/backend-0.0.1-SNAPSHOT.jar
+```
+
+**Note**: Manual JAR execution may cause automatic shutdown. Use start script for stable operation.
+
+## 🛠️ Technology Stack
 
 - **Framework**: Spring Boot 3.1.4
 - **Database**: PostgreSQL
 - **Security**: Spring Security + JWT
-- **ORM**: JPA/Hibernate
-- **Build Tool**: Maven
+- **Build Tool**: Maven (Local: apache-maven-3.9.4)
 - **Java Version**: 17
 
-## Prerequisites
+## 📋 Prerequisites
 
-1. **Java 17** or higher
-2. **PostgreSQL** installed and running
-3. **Maven** 3.6+ for building the project
+1. Java 17+
+2. PostgreSQL with database `studentdb`
+3. Update credentials in `application.properties` if needed
 
-## Database Setup
-
-1. Create a PostgreSQL database:
-```sql
-CREATE DATABASE studentdb;
-```
-
-2. Update database credentials in `src/main/resources/application.properties` if needed:
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/studentdb
-spring.datasource.username=postgres
-spring.datasource.password=shariraj04
-```
-
-## Installation & Running
-
-1. **Clone or navigate to the backend directory**:
-```bash
-cd backend
-```
-
-2. **Install dependencies**:
-```bash
-mvn clean install
-```
-
-3. **Run the application**:
-```bash
-mvn spring-boot:run
-```
-
-The application will start on `http://localhost:8080/api`
-
-## Default Login Credentials
-
-A default admin user is automatically created on first startup:
-- **Username**: `admin`
-- **Password**: `admin123`
-- **Email**: `admin@studenthub.com`
-
-## API Endpoints
+## 🔗 API Endpoints
 
 ### Authentication
 - `POST /api/auth/login` - User login
@@ -81,14 +53,10 @@ A default admin user is automatically created on first startup:
 - `DELETE /api/students/{id}` - Delete student
 - `GET /api/students/search?searchTerm=` - Search students
 - `GET /api/students/filter?course=&year=&status=` - Filter students
-- `PATCH /api/students/{id}/status?status=` - Update enrollment status
-- `GET /api/students/stats` - Get student statistics
-- `GET /api/students/stats/courses` - Get course-wise statistics
-- `GET /api/students/stats/years` - Get year-wise statistics
 
-## Request/Response Examples
+## 💡 Example Requests
 
-### Login Request
+### Login
 ```json
 POST /api/auth/login
 {
@@ -97,7 +65,7 @@ POST /api/auth/login
 }
 ```
 
-### Create Student Request
+### Create Student
 ```json
 POST /api/students
 {
@@ -114,124 +82,51 @@ POST /api/students
 }
 ```
 
-### Student Response
-```json
-{
-  "id": 1,
-  "studentId": "STU-2025-001",
-  "name": "John Doe",
-  "email": "john.doe@example.com",
-  "phone": "+91 9876543210",
-  "course": "computer-science",
-  "year": "2",
-  "addressLine1": "123 Main Street",
-  "city": "Mumbai",
-  "state": "mh",
-  "country": "in",
-  "postalCode": "400001",
-  "enrollmentStatus": "ACTIVE",
-  "createdAt": "2025-09-13T10:30:00",
-  "updatedAt": "2025-09-13T10:30:00"
-}
-```
-
-## Database Schema
-
-The application automatically creates the following tables:
-- `users` - User authentication data
-- `students` - Student information and academic details
-
-## Configuration
-
-Key configuration properties in `application.properties`:
+## ⚙️ Configuration
 
 ```properties
-# Server Configuration
 server.port=8080
-server.servlet.context-path=/api
-
-# Database Configuration
 spring.datasource.url=jdbc:postgresql://localhost:5432/studentdb
-spring.datasource.username=postgres
-spring.datasource.password=shariraj04
-
-# JPA Configuration
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
-
-# JWT Configuration
-jwt.secret=studenthub-secret-key-for-jwt-token-generation-2024
+cors.allowed-origins=http://localhost:4028
 jwt.expiration=86400000
-
-# CORS Configuration
-cors.allowed-origins=http://localhost:3000,http://localhost:5173
 ```
 
-## Development
+## 🐛 Troubleshooting
 
-### Running in Development Mode
+| Issue | Solution |
+|-------|----------|
+| HTTP 400 Error | Use `start.bat` script instead of manual JAR |
+| "Failed to fetch" | Ensure backend runs on port 8080, PostgreSQL is running |
+| Port already in use | `netstat -ano \| findstr 8080` then `taskkill /PID <PID> /F` |
+| Database connection | Verify `studentdb` exists and credentials are correct |
+
+### Test Backend Status
 ```bash
-mvn spring-boot:run -Dspring-boot.run.profiles=dev
+# Check if running
+netstat -ano | findstr 8080
+
+# Test login API
+curl -X POST http://localhost:8080/api/auth/login -H "Content-Type: application/json" -d "{\"usernameOrEmail\":\"admin\",\"password\":\"admin123\"}"
 ```
 
-### Building for Production
-```bash
-mvn clean package
-java -jar target/backend-0.0.1-SNAPSHOT.jar
-```
-
-## Testing
-
-Run the test suite:
-```bash
-mvn test
-```
-
-## Project Structure
+## 📁 Project Structure
 
 ```
 backend/
-├── src/
-│   ├── main/
-│   │   ├── java/com/studenthub/backend/
-│   │   │   ├── config/           # Configuration classes
-│   │   │   ├── controller/       # REST controllers
-│   │   │   ├── dto/             # Data Transfer Objects
-│   │   │   ├── model/           # JPA entities
-│   │   │   ├── repository/      # Data repositories
-│   │   │   ├── service/         # Business logic
-│   │   │   └── StudentHubBackendApplication.java
-│   │   └── resources/
-│   │       └── application.properties
-│   └── test/
-├── pom.xml
-└── README.md
+├── src/main/java/com/studenthub/backend/
+│   ├── controller/       # REST endpoints
+│   ├── service/         # Business logic
+│   ├── model/           # JPA entities
+│   ├── config/          # Security & CORS config
+│   └── dto/             # Data transfer objects
+├── apache-maven-3.9.4/  # Local Maven
+└── target/              # Built JAR file
 ```
 
-## Error Handling
+## 🔐 Security Features
 
-The API returns appropriate HTTP status codes:
-- `200` - Success
-- `201` - Created
-- `400` - Bad Request (validation errors)
-- `401` - Unauthorized
-- `404` - Not Found
-- `500` - Internal Server Error
-
-## CORS Configuration
-
-CORS is configured to allow requests from:
-- `http://localhost:3000` (Create React App)
-- `http://localhost:5173` (Vite)
-
-## Security
-
-- JWT tokens expire after 24 hours
-- Passwords are hashed using BCrypt
-- Role-based access control (ADMIN, TEACHER, STUDENT)
-- CORS protection enabled
-- SQL injection prevention via JPA
-
-## Support
-
-For issues or questions, please check the application logs or contact the development team.
+- JWT tokens (24hr expiration)
+- BCrypt password hashing
+- Role-based access control
+- CORS protection
+- SQL injection prevention
